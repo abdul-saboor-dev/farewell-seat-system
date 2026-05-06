@@ -5,17 +5,35 @@ if (!globalThis.crypto) {
 }
 
 const express = require('express');
-const cors    = require('cors');
-const dotenv  = require('dotenv');
-const path    = require('path');
-const connectDB    = require('./config/db');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const path = require('path');
+const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
+const Seat = require('./models/Seat');
+const seedSeats = require('./utils/seedSeats');
 
 // ─── Load Environment Variables ───────────────────────────────────────────────
 dotenv.config();
 
-// ─── Connect to MongoDB ────────────────────────────────────────────────────────
-connectDB();
+// ─── Connect to MongoDB then auto-seed if empty ───────────────────────────────────────────
+const runSeedOnce = async () => {
+  try {
+    const count = await Seat.countDocuments();
+    if (count === 0) {
+      console.log('🌱 No seats found — seeding 38 seats for first run...');
+      await seedSeats();
+      console.log('✅ Auto-seed complete: 38 seats ready');
+    } else {
+      console.log(`ℹ️  Seats already exist (${count} found) — skipping seed`);
+    }
+  } catch (err) {
+    console.error('❌ Auto-seed error:', err.message);
+    // Non-fatal — server continues even if seed fails
+  }
+};
+
+connectDB().then(runSeedOnce);
 
 // ─── Initialize Express App ───────────────────────────────────────────────────
 const app = express();
