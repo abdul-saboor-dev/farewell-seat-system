@@ -119,14 +119,14 @@ const section = (title) => console.log(`\n${'─'.repeat(60)}\n  ${title}\n${'�
     ? (pass('Device wins over body data', `Returned original: ${r.body.student.email}`), passed++)
     : (fail('Device wins over body data', JSON.stringify(r.body)), failed++);
 
-  // [7] Different device — same email → blocked (email already taken by DEVICE_A)
+  // [7] Different device — exact same credentials → blocked (Incognito/New Browser block)
   r = await request('POST', '/api/auth/login',
     { name: 'Ali Khan', email: 'ali@test.com', rollNumber: 'CS-101' },
     { 'x-device-id': DEVICE_B }
   );
-  r.status === 409
-    ? (pass('Same email from different device blocked', `${r.status} → ${r.body.message}`), passed++)
-    : (fail('Same email from different device blocked', `Got ${r.status}`), failed++);
+  r.status === 403
+    ? (pass('Incognito / new browser blocked (403)', `${r.status} → ${r.body.message}`), passed++)
+    : (fail('Incognito / new browser blocked (403)', `Got ${r.status}: ${r.body.message}`), failed++);
 
   // [8] Missing device ID header → blocked
   r = await request('POST', '/api/auth/login',

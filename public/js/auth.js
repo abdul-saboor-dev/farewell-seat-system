@@ -1,6 +1,7 @@
-// auth.js — Device-first authentication
-// Returning devices → auto-login instantly (no form needed)
-// New devices → show registration form → create account → login
+// auth.js — Device-first authentication with incognito support
+// Returning devices → auto-login instantly (no form shown)
+// Incognito / new browser → email + rollNumber → credentials login
+// New users → name + email + rollNumber → create account → login
 requireGuest();
 
 // ── UI State Helpers ──────────────────────────────────────────────────────────
@@ -18,49 +19,49 @@ const setLoading = (loading) => {
 
 // ── Phase 1: Auto device check on page load ───────────────────────────────────
 const runDeviceCheck = async () => {
-  showPanel('panel-checking'); // show "Checking device security..."
+  showPanel('panel-checking');
 
   try {
-    // Send device ID only — no body — backend auto-logins if device is known
+    // Send device ID only — auto-logins if device is known
     const data = await api('POST', '/auth/login', {});
 
     if (data.newDevice) {
-      // This is a new device — need registration info
+      // Unknown device → show the form
       showPanel('panel-register');
-      document.getElementById('inp-name').focus();
+      document.getElementById('inp-email').focus();
       return;
     }
 
-    // Returning device — auto-login complete
+    // Known device → auto-login complete
     setAuth(data.token, data.student);
     showToast(`Welcome back, ${data.student.name}! ✨`, 'success');
     setTimeout(() => { window.location.href = '/'; }, 1000);
 
   } catch (err) {
-    // Network error or unexpected server error
     showPanel('panel-register');
-    showToast('Device check failed. Please fill in your details.', 'info');
-    document.getElementById('inp-name').focus();
+    showToast('Device check failed. Please enter your details.', 'info');
+    document.getElementById('inp-email').focus();
   }
 };
 
-// ── Phase 2: Registration form submit (new devices only) ──────────────────────
+// ── Phase 2: Form submit ──────────────────────────────────────────────────────
 document.getElementById('btn-login').addEventListener('click', async () => {
   const name       = document.getElementById('inp-name').value.trim();
   const email      = document.getElementById('inp-email').value.trim();
   const rollNumber = document.getElementById('inp-roll').value.trim();
 
   if (!name || !email || !rollNumber) {
-    showToast('Please fill in all fields', 'error'); return;
+    showToast('Please fill in all fields', 'error');
+    return;
   }
   if (!/^\S+@\S+\.\S+$/.test(email)) {
-    showToast('Please enter a valid email address', 'error'); return;
+    showToast('Please enter a valid email address', 'error');
+    return;
   }
 
   setLoading(true);
 
   try {
-    // Same endpoint — this time WITH form body → creates account + returns JWT
     const data = await api('POST', '/auth/login', { name, email, rollNumber });
 
     setAuth(data.token, data.student);
@@ -81,5 +82,5 @@ document.getElementById('btn-login').addEventListener('click', async () => {
   });
 });
 
-// ── Kick off device check immediately on page load ────────────────────────────
+// ── Kick off device check on page load ───────────────────────────────────────
 runDeviceCheck();

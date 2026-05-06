@@ -19,16 +19,24 @@ const studentPayload = (s) => ({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LOGIN  (also handles first-time registration — single unified endpoint)
+// LOGIN  (handles device auto-login, incognito login, and new registration)
 //
-// Flow:
-//   1. Read x-device-id header — this IS the identity key
-//   2. If device found in DB  →  auto-login (ignore any form body)
-//   3. If device NOT found    →  need registration form data
-//        a. body missing      →  return { newDevice: true } so frontend shows form
-//        b. body present      →  create account, bind device, return JWT
+// Full Decision Tree:
 //
-// No OTP. No email. No external service. Pure device identity.
+//  1. x-device-id found in DB
+//       → Auto-login immediately (normal browser, returning user)
+//
+//  2. x-device-id NOT in DB + body has email + rollNumber
+//       a. email+rollNumber matches existing account
+//            → INCOGNITO/NEW BROWSER BLOCKED: return 403 error
+//       b. email+rollNumber is new (both fields are fresh)
+//            → Need name to register → if name missing, return { newDevice: true }
+//            → if name present → create account + bind deviceId + return JWT
+//
+//  3. x-device-id NOT in DB + body empty/incomplete
+//       → return { newDevice: true } — frontend shows the form
+//
+// No OTP. No email. No external service.
 // ─────────────────────────────────────────────────────────────────────────────
 const login = async (req, res, next) => {
   try {
@@ -40,26 +48,66 @@ const login = async (req, res, next) => {
       return next(err);
     }
 
-    // ── RETURNING DEVICE: auto-login immediately ──────────────────────────────
-    const existing = await Student.findOne({ deviceId });
+    // ── STEP 1: Returning device → auto-login immediately ─────────────────────
+    const existingByDevice = await Student.findOne({ deviceId });
 
-    if (existing) {
-      console.log(`✅ Auto-login: ${existing.email} [device: ${deviceId.slice(0, 8)}...]`);
-      const token = generateToken(existing._id);
+    if (existingByDevice) {
+      console.log(`✅ Auto-login: ${existingByDevice.email} [device: ${deviceId.slice(0, 8)}...]`);
+      const token = generateToken(existingByDevice._id);
 
       return res.status(200).json({
         success: true,
         message: 'Welcome back! Auto-login successful.',
         token,
-        student: studentPayload(existing),
+        student: studentPayload(existingByDevice),
       });
     }
 
-    // ── NEW DEVICE: check if form data was submitted ──────────────────────────
+    // ── STEP 2: Unknown device — read form body ────────────────────────────────
     const { name, email, rollNumber } = req.body || {};
 
+    // No credentials at all → tell frontend to show the form
+    if (!email && !rollNumber) {
+      return res.status(200).json({
+        success: true,
+        newDevice: true,
+        message: 'New device detected. Please enter your details.',
+      });
+    }
+
+    // ── STEP 2a: Email + Roll provided → check for existing account ───────────
+    // This is the INCOGNITO path: same student, different device session.
+    // We verify identity by matching BOTH email AND roll number.
+    if (email && rollNumber) {
+      if (!/^\S+@\S+\.\S+$/.test(email)) {
+        const err = new Error('Please enter a valid email address.');
+        err.statusCode = 400;
+        return next(err);
+      }
+
+      const existingByCredentials = await Student.findOne({
+        email: email.toLowerCase().trim(),
+        rollNumber: rollNumber.toUpperCase().trim(),
+      });
+
+      if (existingByCredentials) {
+        // ❌ Credentials match but device is different → block incognito / new browser
+        console.log(`🚫 Blocked incognito login attempt: ${existingByCredentials.email}`);
+        const err = new Error(
+          'Security Alert: You are trying to login from incognito mode or a new browser. ' +
+          'Please leave incognito mode and use the original browser you registered with.'
+        );
+        err.statusCode = 403;
+        return next(err);
+      }
+
+      // Credentials don't match any account — could be a new student.
+      // Fall through to registration logic below.
+    }
+
+    // ── STEP 2b: Brand-new student — need all 3 fields to register ────────────
     if (!name || !email || !rollNumber) {
-      // Tell the frontend: "you're a new device, show the registration form"
+      // Partial data — ask frontend to show the full form
       return res.status(200).json({
         success: true,
         newDevice: true,
@@ -67,54 +115,54 @@ const login = async (req, res, next) => {
       });
     }
 
-    // ── Validate fields before creating ──────────────────────────────────────
+    // Validate email format
     if (!/^\S+@\S+\.\S+$/.test(email)) {
       const err = new Error('Please enter a valid email address.');
       err.statusCode = 400;
       return next(err);
     }
 
-    // Prevent the same email being registered from a second device
-    const emailTaken = await Student.findOne({ email: email.toLowerCase() });
-    if (emailTaken) {
+    // Guard: email already taken by a DIFFERENT roll number (shouldn't happen, but protect it)
+    const emailConflict = await Student.findOne({ email: email.toLowerCase() });
+    if (emailConflict) {
       const err = new Error(
-        'This email is already registered on another device. ' +
-        'Each account is permanently locked to one device. ' +
-        'Contact admin if you need a device reset.'
+        'This email is registered with different details. ' +
+        'Check your roll number, or contact admin.'
       );
       err.statusCode = 409;
       return next(err);
     }
 
-    // Prevent the same roll number being used twice
-    const rollTaken = await Student.findOne({ rollNumber: rollNumber.toUpperCase() });
-    if (rollTaken) {
-      const err = new Error('This roll number is already registered. Contact admin if this is an error.');
+    // Guard: roll number already taken
+    const rollConflict = await Student.findOne({ rollNumber: rollNumber.toUpperCase() });
+    if (rollConflict) {
+      const err = new Error(
+        'This roll number is already registered with a different email. Contact admin.'
+      );
       err.statusCode = 409;
       return next(err);
     }
 
-    // ── CREATE ACCOUNT + BIND DEVICE (first and only time) ───────────────────
+    // ── CREATE ACCOUNT + BIND DEVICE ─────────────────────────────────────────
     const student = await Student.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
       rollNumber: rollNumber.toUpperCase().trim(),
-      deviceId,          // bound permanently at creation
-      isVerified: true,  // no OTP needed — device IS the verification
+      deviceId,          // permanently bound to this device session
+      isVerified: true,
     });
 
-    console.log(`🆕 New account created: ${student.email} [device: ${deviceId.slice(0, 8)}...]`);
+    console.log(`🆕 New account: ${student.email} [device: ${deviceId.slice(0, 8)}...]`);
     const token = generateToken(student._id);
 
     return res.status(201).json({
       success: true,
-      message: 'Account created and login successful!',
+      message: 'Account created! Welcome to the Farewell Seat System.',
       token,
       student: studentPayload(student),
     });
 
   } catch (error) {
-    // Handle Mongoose duplicate key errors gracefully
     if (error.code === 11000) {
       const field = Object.keys(error.keyValue || {})[0] || 'field';
       const friendlyErr = new Error(

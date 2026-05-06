@@ -26,11 +26,14 @@
       </p>
     </div>
 
-    <!-- ── Panel 2: Registration Form (shown only for new devices) ───────────── -->
+    <!-- ── Panel 2: Login / Registration Form ────────────────────────────────── -->
     <div id="panel-register" style="display:none; flex-direction:column; gap:0;">
 
-      <p class="auth-subtitle" style="margin-bottom:20px;">
-        📱 New device detected — please register your student details
+      <p class="auth-subtitle" style="margin-bottom:6px;" id="form-subtitle">
+        📱 New device detected — please enter your details
+      </p>
+      <p style="color:var(--text-2);font-size:0.78rem;text-align:center;margin-bottom:18px;line-height:1.5;">
+        Please enter your details to register this device.
       </p>
 
       <div class="form-group">
@@ -52,13 +55,13 @@
       </div>
 
       <button class="btn btn-primary btn-full" id="btn-login">
-        <span id="login-btn-text">Register &amp; Login →</span>
+        <span id="login-btn-text">Continue →</span>
         <span id="login-spinner" class="spinner" style="display:none"></span>
       </button>
 
       <p class="auth-footer" style="margin-top:16px;">
         🔒 Your account will be <strong>permanently linked</strong> to this device.<br />
-        One account — one device only.
+        One account — one device only. Incognito login is not permitted.
       </p>
 
     </div>
