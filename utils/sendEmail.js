@@ -1,52 +1,75 @@
 const nodemailer = require('nodemailer');
 
 /**
- * Email Sender Utility — Gmail SMTP via Nodemailer
- * Always sends real emails. No stub/fallback mode.
- *
- * Required .env variables:
- *   EMAIL_USER=cit.farewell@gmail.com
- *   EMAIL_PASS=<16-char Gmail App Password>
+ * ─────────────────────────────────────────────
+ * EMAIL UTILITY (PRODUCTION SAFE VERSION)
+ * Fixes:
+ * - Railway SMTP timeout
+ * - OTP stuck on "sending..."
+ * - unstable transporter creation
+ * ─────────────────────────────────────────────
  */
 
-const createTransporter = () => {
-  return nodemailer.createTransport({
+let transporter = null;
+
+// Create & cache transporter (IMPORTANT for performance + stability)
+const getTransporter = async () => {
+  if (transporter) return transporter;
+
+  transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
-    secure: false, // TLS (STARTTLS)
+    secure: false, // STARTTLS
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+
+    // 🔥 critical for Railway / Render / Vercel backends
+    connectionTimeout: 10000, // 10s
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+
     tls: {
-      rejectUnauthorized: false, // avoid cert issues in some environments
+      rejectUnauthorized: false,
     },
   });
+
+  // Verify connection ONCE (helps catch config issues early)
+  try {
+    await transporter.verify();
+    console.log('📧 Gmail SMTP connected successfully');
+  } catch (err) {
+    console.error('❌ SMTP verify failed:', err.message);
+  }
+
+  return transporter;
 };
 
 /**
- * Send an email using Gmail SMTP.
- * @param {Object} options
- * @param {string} options.to      - Recipient email address
- * @param {string} options.subject - Email subject line
- * @param {string} options.html    - HTML body content
+ * Send Email
  */
 const sendEmail = async ({ to, subject, html }) => {
-  const transporter = createTransporter();
-
-  const mailOptions = {
-    from: `"Farewell Seat System 🎓" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    html,
-  };
-
   try {
+    const transporter = await getTransporter();
+
+    const mailOptions = {
+      from: `"Farewell Seat System 🎓" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html,
+    };
+
     const info = await transporter.sendMail(mailOptions);
-    console.log(`📧 Email sent successfully to ${to} | MessageId: ${info.messageId}`);
+
+    console.log(`📧 Email sent → ${to} | ID: ${info.messageId}`);
+    return info;
+
   } catch (error) {
-    console.error(`❌ Email sending failed: ${error.message}`);
-    throw new Error(`Failed to send email to ${to}: ${error.message}`);
+    console.error('❌ Email sending failed:', error.message);
+
+    // IMPORTANT: throw clean error so frontend stops spinner properly
+    throw new Error(`Email failed: ${error.message}`);
   }
 };
 
