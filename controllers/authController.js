@@ -27,70 +27,67 @@ const buildOTPEmailHTML = (name, otp) => `
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// @desc    Register student & send OTP to email
-// @route   POST /api/auth/register
-// @access  Public
+// REGISTER
 // ─────────────────────────────────────────────────────────────────────────────
 const register = async (req, res, next) => {
   try {
     const { name, email, rollNumber } = req.body;
 
-    // Validate required fields
     if (!name || !email || !rollNumber) {
       const err = new Error('Name, email, and roll number are required');
       err.statusCode = 400;
       return next(err);
     }
 
-    // Check if another student already has this roll number with a different email
     const existingRoll = await Student.findOne({
       rollNumber: rollNumber.toUpperCase(),
       email: { $ne: email.toLowerCase() },
     });
+
     if (existingRoll) {
       const err = new Error('Roll number is already registered with a different email');
       err.statusCode = 409;
       return next(err);
     }
 
-    // Find or create student
     let student = await Student.findOne({ email: email.toLowerCase() });
+
     if (!student) {
       student = await Student.create({ name, email, rollNumber });
     }
 
-    // Generate OTP and hash it
     const rawOTP = generateOTP();
     const hashedOTP = await bcrypt.hash(rawOTP, 10);
 
-    // Delete any existing OTP for this email, then save new one
     await OTP.deleteMany({ email: email.toLowerCase() });
+
     await OTP.create({
       email: email.toLowerCase(),
       otp: hashedOTP,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     });
 
-    // Send OTP via email
-    await sendEmail({
+    // ✅ FIXED: NON-BLOCKING EMAIL (IMPORTANT)
+    sendEmail({
       to: email,
       subject: '🎓 Your Farewell Seat OTP Code',
       html: buildOTPEmailHTML(student.name, rawOTP),
+    }).catch(err => {
+      console.log('⚠️ Email failed but OTP still valid:', err.message);
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: `OTP sent to ${email}. It expires in 5 minutes.`,
     });
+
   } catch (error) {
     next(error);
   }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// @desc    Verify OTP and login student
-// @route   POST /api/auth/verify-otp
-// @access  Public
+// VERIFY OTP
 // ─────────────────────────────────────────────────────────────────────────────
 const verifyOTP = async (req, res, next) => {
   try {
@@ -102,7 +99,6 @@ const verifyOTP = async (req, res, next) => {
       return next(err);
     }
 
-    // Find unexpired OTP record
     const otpRecord = await OTP.findOne({
       email: email.toLowerCase(),
       expiresAt: { $gt: new Date() },
@@ -114,15 +110,14 @@ const verifyOTP = async (req, res, next) => {
       return next(err);
     }
 
-    // Compare raw OTP against stored hash
     const isMatch = await bcrypt.compare(otp.toString(), otpRecord.otp);
+
     if (!isMatch) {
       const err = new Error('Invalid OTP. Please try again.');
       err.statusCode = 401;
       return next(err);
     }
 
-    // Mark student as verified
     const student = await Student.findOneAndUpdate(
       { email: email.toLowerCase() },
       { isVerified: true },
@@ -135,13 +130,11 @@ const verifyOTP = async (req, res, next) => {
       return next(err);
     }
 
-    // Clean up used OTP
     await OTP.deleteMany({ email: email.toLowerCase() });
 
-    // Generate JWT
     const token = generateToken(student._id);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Login successful!',
       token,
@@ -154,15 +147,14 @@ const verifyOTP = async (req, res, next) => {
         bookedSeat: student.bookedSeat,
       },
     });
+
   } catch (error) {
     next(error);
   }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// @desc    Resend OTP to student email
-// @route   POST /api/auth/resend-otp
-// @access  Public
+// RESEND OTP
 // ─────────────────────────────────────────────────────────────────────────────
 const resendOTP = async (req, res, next) => {
   try {
@@ -175,52 +167,61 @@ const resendOTP = async (req, res, next) => {
     }
 
     const student = await Student.findOne({ email: email.toLowerCase() });
+
     if (!student) {
       const err = new Error('No student found with this email. Please register first.');
       err.statusCode = 404;
       return next(err);
     }
 
-    // Generate and save new OTP
     const rawOTP = generateOTP();
     const hashedOTP = await bcrypt.hash(rawOTP, 10);
 
     await OTP.deleteMany({ email: email.toLowerCase() });
+
     await OTP.create({
       email: email.toLowerCase(),
       otp: hashedOTP,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     });
 
-    await sendEmail({
+    // ✅ FIXED: NON-BLOCKING EMAIL
+    sendEmail({
       to: email,
       subject: '🎓 Your New Farewell Seat OTP Code',
       html: buildOTPEmailHTML(student.name, rawOTP),
+    }).catch(err => {
+      console.log('⚠️ Resend email failed but OTP still valid:', err.message);
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: `New OTP sent to ${email}. It expires in 5 minutes.`,
     });
+
   } catch (error) {
     next(error);
   }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// @desc    Get currently logged-in student profile
-// @route   GET /api/auth/me
-// @access  Private (requires JWT)
+// GET ME
 // ─────────────────────────────────────────────────────────────────────────────
 const getMe = async (req, res, next) => {
   try {
     const student = await Student.findById(req.student.id).populate('bookedSeat');
+
     if (!student) {
       const err = new Error('Student not found');
       err.statusCode = 404;
       return next(err);
     }
-    res.status(200).json({ success: true, student });
+
+    res.status(200).json({
+      success: true,
+      student,
+    });
+
   } catch (error) {
     next(error);
   }
