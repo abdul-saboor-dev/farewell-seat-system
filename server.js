@@ -36,8 +36,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Serve Static Frontend Files ──────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, 'public')));
+
 
 // ─── Health Check Route ───────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
@@ -60,6 +59,10 @@ app.use('/api/seats', require('./routes/seatRoutes'));
 // Phase 4: Admin routes ✅
 app.use('/api/admin', require('./routes/adminRoutes'));
 
+// ─── Serve Static Frontend (AFTER API routes) ─────────────────────────────────────
+// Placed after /api/* so static middleware never shadows API endpoints
+app.use(express.static(path.join(__dirname, 'public')));
+
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
@@ -73,7 +76,8 @@ app.use(errorHandler);
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-  console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
+// Bind to 0.0.0.0 — required for Railway/Render (default 127.0.0.1 is not reachable externally)
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(`📡 Health check available at /api/health`);
 });
