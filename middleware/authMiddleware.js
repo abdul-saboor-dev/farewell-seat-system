@@ -1,13 +1,15 @@
 const jwt = require('jsonwebtoken');
-const Student = require('../models/Student');
 
 /**
- * Auth Middleware (Student JWT Guard)
- * Verifies the Bearer JWT token from Authorization header.
- * Also validates that the request device ID matches the bound device.
- * Attaches decoded student payload to req.student.
+ * Auth Middleware — JWT Guard
+ *
+ * Verifies the Bearer token from the Authorization header.
+ * Attaches decoded student payload { id, iat, exp } to req.student.
+ *
+ * Device validation is handled at login time (not here) — the JWT
+ * itself is the proof of authentication once issued.
  */
-const protect = async (req, res, next) => {
+const protect = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -19,31 +21,7 @@ const protect = async (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // ── Device ID Validation ─────────────────────────────────────────────────
-    const deviceId = req.headers['x-device-id'];
-
-    if (!deviceId || deviceId.trim() === '') {
-      const err = new Error('Device ID missing. Please login again.');
-      err.statusCode = 401;
-      return next(err);
-    }
-
-    const student = await Student.findById(decoded.id).select('deviceId');
-
-    if (!student) {
-      const err = new Error('Student account not found.');
-      err.statusCode = 401;
-      return next(err);
-    }
-
-    if (student.deviceId && student.deviceId !== deviceId.trim()) {
-      const err = new Error('Session invalid: device mismatch. Please login again on your registered device.');
-      err.statusCode = 403;
-      return next(err);
-    }
-
-    req.student = decoded; // { id, iat, exp }
+    req.student = decoded;
     next();
 
   } catch (error) {

@@ -3,20 +3,11 @@ const showToast = (message, type = 'info', duration = 3500) => {
   const container = document.getElementById('toast-container');
   if (!container) return;
 
-  const icons = {
-    success: '✅',
-    error: '❌',
-    info: 'ℹ️'
-  };
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
 
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-
-  toast.innerHTML = `
-    <span>${icons[type] || icons.info}</span>
-    <span>${message}</span>
-  `;
-
+  toast.innerHTML = `<span>${icons[type] || icons.info}</span><span>${message}</span>`;
   container.appendChild(toast);
 
   setTimeout(() => {
@@ -25,64 +16,55 @@ const showToast = (message, type = 'info', duration = 3500) => {
   }, duration);
 };
 
-// ── Device ID (One Account = One Device) ────────────────────────────────────
+// ── Device ID — One Account = One Device ─────────────────────────────────────
 /**
- * Returns a stable, unique device ID for this browser.
- * Generated once, persisted in localStorage forever.
- * Used to bind a student account to a single device.
+ * Returns the persistent device fingerprint for this browser.
+ * Generated ONCE using crypto.randomUUID() and stored in localStorage forever.
+ * This ID is the primary identity key — never cleared, never changed.
+ *
+ * fss_device_id is intentionally excluded from clearAuth() so that
+ * the device binding survives logout and token expiry.
  */
 const getDeviceId = () => {
   const KEY = 'fss_device_id';
   let id = localStorage.getItem(KEY);
 
   if (!id) {
-    // Generate a fingerprint: random UUID-style string + browser entropy
-    const buf = new Uint8Array(16);
-    crypto.getRandomValues(buf);
-    id = [...buf]
-      .map((b, i) =>
-        [4, 6, 8, 10].includes(i)
-          ? '-' + b.toString(16).padStart(2, '0')
-          : b.toString(16).padStart(2, '0')
-      )
-      .join('');
+    // crypto.randomUUID() is supported in all modern browsers (Chrome 92+, Firefox 95+, Safari 15.4+)
+    // and is available on HTTPS origins (which both Railway and Vercel are).
+    id = crypto.randomUUID();
     localStorage.setItem(KEY, id);
   }
 
   return id;
 };
 
-// ── API Base URL (FIXED + SAFE) ───────────────────────────────────────────────
-// 🔥 IMPORTANT: ONLY correct Railway backend
+// ── API Base URL ──────────────────────────────────────────────────────────────
 const RAILWAY_URL = 'https://farewell-seat-system-production.up.railway.app';
 
-// Decide environment safely
 const isLocal =
   window.location.hostname === 'localhost' ||
   window.location.hostname === '127.0.0.1';
 
-// Final base URL
 const API_BASE = isLocal ? '' : RAILWAY_URL;
 
 // ── API Helper ────────────────────────────────────────────────────────────────
-// X-Device-ID is automatically attached to EVERY request.
+// x-device-id is automatically sent on EVERY request — no manual passing needed.
 const api = async (method, path, body = null, token = null) => {
   try {
     const headers = {
       'Content-Type': 'application/json',
-      'X-Device-ID': getDeviceId(),  // ← device fingerprint on every call
+      'x-device-id': getDeviceId(),
     };
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const url = `${API_BASE}/api${path}`;
-
-    const res = await fetch(url, {
+    const res = await fetch(`${API_BASE}/api${path}`, {
       method,
       headers,
-      body: body ? JSON.stringify(body) : undefined
+      body: body ? JSON.stringify(body) : undefined,
     });
 
     let data;
@@ -105,14 +87,10 @@ const api = async (method, path, body = null, token = null) => {
 };
 
 // ── Auth Helpers ─────────────────────────────────────────────────────────────
-const getToken = () => localStorage.getItem('fss_token');
-
+const getToken   = () => localStorage.getItem('fss_token');
 const getStudent = () => {
-  try {
-    return JSON.parse(localStorage.getItem('fss_student')) || null;
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(localStorage.getItem('fss_student')) || null; }
+  catch { return null; }
 };
 
 const setAuth = (token, student) => {
@@ -123,21 +101,16 @@ const setAuth = (token, student) => {
 const clearAuth = () => {
   localStorage.removeItem('fss_token');
   localStorage.removeItem('fss_student');
-  // NOTE: fss_device_id is intentionally NOT cleared —
-  // the device binding must survive logout.
+  // ⚠️ DO NOT remove fss_device_id — the device binding must survive logout
 };
 
 const isLoggedIn = () => !!getToken();
 
 // ── Route Guards ─────────────────────────────────────────────────────────────
 const requireAuth = () => {
-  if (!isLoggedIn()) {
-    window.location.href = '/login.html';
-  }
+  if (!isLoggedIn()) window.location.href = '/login.html';
 };
 
 const requireGuest = () => {
-  if (isLoggedIn()) {
-    window.location.href = '/';
-  }
+  if (isLoggedIn()) window.location.href = '/';
 };

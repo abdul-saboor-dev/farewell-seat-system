@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login — Farewell Seat System</title>
-  <meta name="description" content="Login with your student details to reserve your farewell seat." />
+  <meta name="description" content="Secure device-based login for the Farewell Seat Reservation System." />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -14,35 +14,51 @@
   <div class="auth-card">
 
     <div class="auth-logo">🎓</div>
-    <h1 class="auth-title">Welcome Back</h1>
-    <p class="auth-subtitle">Enter your student details to access the seat reservation</p>
+    <h1 class="auth-title">Farewell Seat System</h1>
 
-    <!-- Single-Step Login Form -->
-    <div class="auth-step active" id="step-register">
+    <!-- ── Panel 1: Device Check (shown by default on load) ─────────────────── -->
+    <div id="panel-checking" style="display:flex; flex-direction:column; align-items:center; gap:18px; padding:20px 0;">
+      <div class="spinner" style="display:inline-block; width:36px; height:36px;"></div>
+      <p style="color:var(--text-1); font-size:1rem; font-weight:600;">🔒 Device security check in progress...</p>
+      <p style="color:var(--text-2); font-size:0.82rem; text-align:center; max-width:280px; line-height:1.6;">
+        This system is locked to <strong>one account per device</strong> for security.
+        Verifying your device identity...
+      </p>
+    </div>
+
+    <!-- ── Panel 2: Registration Form (shown only for new devices) ───────────── -->
+    <div id="panel-register" style="display:none; flex-direction:column; gap:0;">
+
+      <p class="auth-subtitle" style="margin-bottom:20px;">
+        📱 New device detected — please register your student details
+      </p>
 
       <div class="form-group">
         <label class="form-label" for="inp-name">Full Name</label>
-        <input class="form-input" id="inp-name" type="text" placeholder="e.g. Ali Khan" autocomplete="name" />
+        <input class="form-input" id="inp-name" type="text"
+               placeholder="e.g. Ali Khan" autocomplete="name" />
       </div>
 
       <div class="form-group">
         <label class="form-label" for="inp-email">Student Email</label>
-        <input class="form-input" id="inp-email" type="email" placeholder="ali@university.edu" autocomplete="email" />
+        <input class="form-input" id="inp-email" type="email"
+               placeholder="ali@university.edu" autocomplete="email" />
       </div>
 
       <div class="form-group">
         <label class="form-label" for="inp-roll">Roll Number</label>
-        <input class="form-input" id="inp-roll" type="text" placeholder="e.g. CS-2021-001" autocomplete="off" />
+        <input class="form-input" id="inp-roll" type="text"
+               placeholder="e.g. CS-2021-001" autocomplete="off" />
       </div>
 
       <button class="btn btn-primary btn-full" id="btn-login">
-        <span id="login-btn-text">Login →</span>
+        <span id="login-btn-text">Register &amp; Login →</span>
         <span id="login-spinner" class="spinner" style="display:none"></span>
       </button>
 
-      <p class="auth-footer">
-        This device will be permanently linked to your account.<br />
-        <strong>One account — one device only.</strong>
+      <p class="auth-footer" style="margin-top:16px;">
+        🔒 Your account will be <strong>permanently linked</strong> to this device.<br />
+        One account — one device only.
       </p>
 
     </div>

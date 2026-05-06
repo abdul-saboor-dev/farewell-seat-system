@@ -126,7 +126,7 @@ const cancelBooking = async (seatNumber) => {
 
 // ── Delete Student Completely ─────────────────────────────────────────────────
 const deleteStudent = async (studentId, studentName) => {
-  if (!confirm(`Completely delete "${studentName}"?\n\nThis will:\n• Remove their seat booking\n• Delete their OTP records\n• Remove their registration\n\nThey will need to register again from scratch.`)) return;
+  if (!confirm(`Completely delete "${studentName}"?\n\nThis will:\n• Remove their seat booking\n• Remove their device registration\n• Delete their account permanently\n\nThey will need to register again from a new device session.`)) return;
   try {
     const data = await apiAdmin('DELETE', `/admin/student/${studentId}`);
     showToast(data.message, 'success');

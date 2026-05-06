@@ -24,13 +24,20 @@ const studentSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
     },
-    // ── Device-Based Auth ────────────────────────────────────────────────────
-    // Stored on first successful login. All subsequent logins must match.
+
+    // ── Device-Based Identity ─────────────────────────────────────────────────
+    // This is the primary authentication key.
+    // Set at account creation and NEVER changed.
+    // sparse: true → allows the field to be absent in old documents without
+    //                violating the unique index.
     deviceId: {
       type: String,
-      default: null,
+      unique: true,
+      sparse: true,
       trim: true,
+      default: null,
     },
+
     isVerified: {
       type: Boolean,
       default: false,
@@ -42,7 +49,7 @@ const studentSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // createdAt, updatedAt
+    timestamps: true,
   }
 );
 

@@ -1,6 +1,5 @@
 const Seat = require('../models/Seat');
 const Student = require('../models/Student');
-const OTP = require('../models/OTP');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // @desc    Get all bookings (admin view)
@@ -133,10 +132,7 @@ const deleteStudent = async (req, res, next) => {
       });
     }
 
-    // 2. Delete any pending OTP records for this email
-    await OTP.deleteMany({ email: student.email });
-
-    // 3. Delete the student document completely
+    // 2. Delete the student document completely
     await Student.findByIdAndDelete(studentId);
 
     res.status(200).json({
