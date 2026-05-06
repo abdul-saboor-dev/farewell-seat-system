@@ -13,10 +13,12 @@ const showToast = (message, type = 'info', duration = 3500) => {
 };
 
 // ── API Base URL ──────────────────────────────────────────────────────────────
-// Auto-detects: empty string on localhost (relative), full URL on production
+// On localhost  → use relative paths (same Express server serves frontend)
+// On Vercel / any other host → use full Railway backend URL
+const RAILWAY_URL = 'https://farewell-seat-system.up.railway.app';
 const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ? ''
-  : 'https://farewell-seat-system.up.railway.app';
+  ? ''            // relative — Express serves both frontend and API
+  : RAILWAY_URL;  // absolute — Vercel frontend → Railway backend
 
 // ── API Helper ────────────────────────────────────────────────────────────────
 const api = async (method, path, body = null, token = null) => {

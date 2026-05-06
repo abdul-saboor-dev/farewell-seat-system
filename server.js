@@ -20,10 +20,21 @@ connectDB();
 // ─── Initialize Express App ───────────────────────────────────────────────────
 const app = express();
 
-// ─── Core Middleware ──────────────────────────────────────────────────────────
-app.use(cors());                        // Enable CORS for all origins
-app.use(express.json());                // Parse incoming JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+// ─── CORS — Allow Vercel frontend to call Railway backend ────────────────────
+// Note: credentials:true is incompatible with origin:'*'.
+// We use JWT in Authorization headers (not cookies), so credentials not needed.
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Admin-Password',
+  ],
+}));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // ─── Serve Static Frontend Files ──────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
