@@ -74,3 +74,5 @@ const sendEmail = async ({ to, subject, html }) => {
 };
 
 module.exports = sendEmail;
+console.log(process.env.EMAIL_USER);
+console.log(process.env.EMAIL_PASS ? "PASS OK" : "NO PASS");
