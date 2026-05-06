@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seat Map — Farewell Seat System</title>
+  <meta name="description" content="Reserve your farewell seat on the live event floor plan." />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="toast-container"></div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <div class="navbar-logo">🎓</div>
+    Farewell <em>Seats</em>
+  </a>
+  <div class="navbar-actions">
+    <button class="btn btn-ghost btn-sm" id="btn-refresh">🔄 Refresh</button>
+    <div id="nav-auth">
+      <a href="/login.html" class="btn btn-primary btn-sm">Login to Book</a>
+    </div>
+  </div>
+</nav>
+
+<main class="page">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>🎉 Farewell Event — Seating Plan</h1>
+    <p>Click any available seat to reserve your spot for the ceremony</p>
+  </div>
+
+  <!-- User Banner (logged in) -->
+  <div class="user-banner" id="user-banner" style="display:none">
+    <div class="user-info">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <div>
+        <div class="user-name" id="user-name">—</div>
+        <div class="user-roll" id="user-roll">—</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="user-seat-badge" id="user-seat-badge" style="display:none">🪑 Seat #<span id="user-seat-num"></span></span>
+      <button class="btn btn-ghost btn-sm" id="btn-logout">Logout</button>
+    </div>
+  </div>
+
+  <!-- Floor Plan -->
+  <div class="floor-plan">
+
+    <!-- ① FACULTY ZONE -->
+    <div class="faculty-zone">
+      <div class="zone-label">⭐ Faculty / Teacher Area</div>
+      <div class="faculty-row">
+        <div class="faculty-chair">
+          <span class="faculty-icon">👨‍🏫</span>
+          <span class="faculty-name">Faculty 1</span>
+        </div>
+        <div class="faculty-chair">
+          <span class="faculty-icon">👩‍🏫</span>
+          <span class="faculty-name">Faculty 2</span>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- ③ STUDENT SEATING -->
+    <div class="seating-zone">
+      <!-- Seating header with stats + legend -->
+      <div class="seating-header">
+        <div>
+          <div class="seating-title" style="margin-bottom:8px;">🪑 Student Seating — 38 Seats</div>
+          <div class="stats-row">
+            <div class="stat-pill"><span class="stat-dot green"></span><span id="stat-available">—</span> Free</div>
+            <div class="stat-pill"><span class="stat-dot red"></span><span id="stat-booked">—</span> Taken</div>
+            <div class="stat-pill"><span class="stat-dot gold"></span>38 Total</div>
+          </div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-dot available"></span>Available</div>
+          <div class="legend-item"><span class="legend-dot booked"></span>Booked</div>
+          <div class="legend-item"><span class="legend-dot mine"></span>Your Seat</div>
+        </div>
+      </div>
+
+      <!-- Seat Grid: Left | Aisle | Right -->
+      <div class="seating-grid">
+        <!-- Left column: seats 1–19 -->
+        <div>
+          <div class="seat-col-label">⬅ Left (1–19)</div>
+          <div class="seat-col" id="left-col"></div>
+        </div>
+
+        <!-- Center Tables -->
+        <div class="aisle-col">
+          <div class="tables-column">
+            <div class="center-table"><span class="center-table-icon">🪵</span><span class="center-table-label">Table</span></div>
+            <div class="center-table"><span class="center-table-icon">🪵</span><span class="center-table-label">Table</span></div>
+            <div class="center-table"><span class="center-table-icon">🪵</span><span class="center-table-label">Table</span></div>
+            <div class="center-table"><span class="center-table-icon">🪵</span><span class="center-table-label">Table</span></div>
+            <div class="center-table"><span class="center-table-icon">🪵</span><span class="center-table-label">Table</span></div>
+            <div class="center-table"><span class="center-table-icon">🪵</span><span class="center-table-label">Table</span></div>
+          </div>
+        </div>
+
+        <!-- Right column: seats 20–38 -->
+        <div>
+          <div class="seat-col-label">Right (20–38) ➡</div>
+          <div class="seat-col" id="right-col"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /floor-plan -->
+</main>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <div class="modal-title">Confirm Booking</div>
+    <div class="modal-subtitle" id="confirm-modal-text">Book this seat?</div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-ghost btn-full" id="btn-modal-cancel">Cancel</button>
+      <button class="btn btn-primary btn-full" id="btn-modal-confirm">
+        <span id="confirm-text">Confirm</span>
+        <span id="confirm-spinner" class="spinner" style="display:none"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>

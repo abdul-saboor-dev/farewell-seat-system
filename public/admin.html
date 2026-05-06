@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Farewell Seat System</title>
+  <meta name="description" content="Admin dashboard to manage farewell seat bookings." />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="toast-container"></div>
+
+<!-- Admin Password Gate -->
+<div class="modal-overlay open" id="admin-login-overlay">
+  <div class="modal">
+    <div style="text-align:center;font-size:2rem;margin-bottom:12px">🔐</div>
+    <div class="modal-title" style="text-align:center">Admin Access</div>
+    <div class="modal-subtitle" style="text-align:center">Enter the admin password to continue</div>
+    <div class="form-group">
+      <label class="form-label" for="admin-pwd-input">Password</label>
+      <input class="form-input" id="admin-pwd-input" type="password" placeholder="Enter admin password…" />
+    </div>
+    <button class="btn btn-primary btn-full" id="btn-admin-login">
+      <span id="admin-login-text">Access Dashboard</span>
+      <span id="admin-login-spinner" class="spinner" style="display:none"></span>
+    </button>
+  </div>
+</div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <div class="navbar-logo">🎓</div>
+    Farewell <em>Admin</em>
+  </a>
+  <div class="navbar-actions">
+    <button class="btn btn-danger btn-sm" id="btn-reset-all">🗑 Reset All</button>
+    <a href="/" class="btn btn-ghost btn-sm">← Seat Map</a>
+  </div>
+</nav>
+
+<main class="page">
+  <div class="page-header">
+    <h1>👨‍🏫 Admin Dashboard</h1>
+    <p>Manage bookings, view students, and control seat assignments</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" style="justify-content:center;margin-bottom:24px">
+    <div class="stat-pill"><span class="stat-dot" style="background:#a5b4fc;box-shadow:0 0 6px rgba(165,180,252,0.3)"></span><span id="admin-stat-students">—</span> Students</div>
+    <div class="stat-pill"><span class="stat-dot red"></span><span id="admin-stat-booked">—</span> Booked</div>
+    <div class="stat-pill"><span class="stat-dot green"></span><span id="admin-stat-available">—</span> Available</div>
+  </div>
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:8px;margin-bottom:20px">
+    <button class="btn btn-primary btn-sm" id="tab-bookings" onclick="switchTab('bookings')">🪑 Bookings</button>
+    <button class="btn btn-ghost btn-sm"   id="tab-students" onclick="switchTab('students')">👥 Students</button>
+  </div>
+
+  <!-- Bookings Table -->
+  <div id="panel-bookings">
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th>Seat #</th><th>Side</th><th>Name</th>
+          <th>Email</th><th>Roll No.</th><th>Booked At</th><th>Action</th>
+        </tr></thead>
+        <tbody id="bookings-tbody">
+          <tr><td colspan="7"><div class="empty-state"><div class="icon">⏳</div><p>Loading…</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Students Table -->
+  <div id="panel-students" style="display:none">
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th>Name</th><th>Email</th><th>Roll No.</th>
+          <th>Verified</th><th>Seat</th><th>Joined</th><th>Action</th>
+        </tr></thead>
+        <tbody id="students-tbody">
+          <tr><td colspan="7"><div class="empty-state"><div class="icon">⏳</div><p>Loading…</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- Reset Confirm Modal -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal">
+    <div class="modal-title">⚠️ Reset All Seats?</div>
+    <div class="modal-subtitle">This cancels ALL bookings and cannot be undone.</div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-ghost btn-full" id="btn-reset-cancel">Cancel</button>
+      <button class="btn btn-danger btn-full" id="btn-reset-confirm">
+        <span id="reset-text">Yes, Reset</span>
+        <span id="reset-spinner" class="spinner" style="display:none"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>
