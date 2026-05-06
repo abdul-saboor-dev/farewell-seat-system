@@ -2,43 +2,42 @@ const nodemailer = require('nodemailer');
 
 /**
  * ─────────────────────────────────────────────
- * EMAIL UTILITY (PRODUCTION SAFE VERSION)
+ * EMAIL UTILITY (RAILWAY SAFE VERSION)
  * Fixes:
- * - Railway SMTP timeout
+ * - SMTP timeout
+ * - ENETUNREACH (IPv6 issue)
  * - OTP stuck on "sending..."
- * - unstable transporter creation
  * ─────────────────────────────────────────────
  */
 
 let transporter = null;
 
-// Create & cache transporter (IMPORTANT for performance + stability)
+// Create & cache transporter
 const getTransporter = async () => {
   if (transporter) return transporter;
 
   transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // STARTTLS
+    port: 465,          // ✅ FIXED (SSL)
+    secure: true,       // ✅ REQUIRED for 465
+
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
 
-    // 🔥 critical for Railway / Render / Vercel backends
-    connectionTimeout: 10000, // 10s
+    // 🔥 FORCE IPv4 (CRITICAL FIX FOR RAILWAY)
+    family: 4,
+
+    // Optional but useful timeouts
+    connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
-
-    tls: {
-      rejectUnauthorized: false,
-    },
   });
 
-  // Verify connection ONCE (helps catch config issues early)
   try {
     await transporter.verify();
-    console.log('📧 Gmail SMTP connected successfully');
+    console.log('📧 SMTP READY (IPv4 + SSL)');
   } catch (err) {
     console.error('❌ SMTP verify failed:', err.message);
   }
@@ -46,33 +45,29 @@ const getTransporter = async () => {
   return transporter;
 };
 
-/**
- * Send Email
- */
+// Send Email
 const sendEmail = async ({ to, subject, html }) => {
   try {
     const transporter = await getTransporter();
 
-    const mailOptions = {
+    const info = await transporter.sendMail({
       from: `"Farewell Seat System 🎓" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
-    };
-
-    const info = await transporter.sendMail(mailOptions);
+    });
 
     console.log(`📧 Email sent → ${to} | ID: ${info.messageId}`);
     return info;
 
   } catch (error) {
     console.error('❌ Email sending failed:', error.message);
-
-    // IMPORTANT: throw clean error so frontend stops spinner properly
     throw new Error(`Email failed: ${error.message}`);
   }
 };
 
 module.exports = sendEmail;
-console.log(process.env.EMAIL_USER);
-console.log(process.env.EMAIL_PASS ? "PASS OK" : "NO PASS");
+
+// Debug (remove later)
+console.log("EMAIL USER:", process.env.EMAIL_USER);
+console.log("EMAIL PASS:", process.env.EMAIL_PASS ? "OK" : "MISSING");
