@@ -69,7 +69,11 @@ document.getElementById('btn-login').addEventListener('click', async () => {
     setTimeout(() => { window.location.href = '/'; }, 1200);
 
   } catch (err) {
-    showToast(err.message, 'error');
+    if (err.message.includes('incognito') || err.message.includes('Security Alert')) {
+      alert(err.message);
+    } else {
+      showToast(err.message, 'error');
+    }
   } finally {
     setLoading(false);
   }
