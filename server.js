@@ -48,6 +48,42 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ─── Temporary Seed Route (for database initialization) ──────────────────────
+app.post('/api/seed', async (req, res) => {
+  try {
+    const Seat = require('./models/Seat');
+
+    // Clear existing seats
+    await Seat.deleteMany({});
+
+    const seats = [];
+
+    // Left side: seats 1–19
+    for (let i = 1; i <= 19; i++) {
+      seats.push({ seatNumber: i, side: 'left' });
+    }
+
+    // Right side: seats 20–38
+    for (let i = 20; i <= 38; i++) {
+      seats.push({ seatNumber: i, side: 'right' });
+    }
+
+    const result = await Seat.insertMany(seats);
+
+    res.status(200).json({
+      success: true,
+      message: 'Database seeded successfully',
+      result: { seatedCount: result.length },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Seed failed',
+      error: error.message,
+    });
+  }
+});
+
 // ─── API Routes ───────────────────────────────────────────────────────────────
 // Phase 2: Auth routes ✅
 app.use('/api/auth', require('./routes/authRoutes'));
