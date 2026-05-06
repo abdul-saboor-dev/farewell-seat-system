@@ -13,7 +13,7 @@ const showPanel = (id) => {
 
 const setLoading = (loading) => {
   document.getElementById('login-btn-text').style.display = loading ? 'none' : 'inline';
-  document.getElementById('login-spinner').style.display  = loading ? 'inline-block' : 'none';
+  document.getElementById('login-spinner').style.display = loading ? 'inline-block' : 'none';
   document.getElementById('btn-login').disabled = loading;
 };
 
@@ -46,8 +46,8 @@ const runDeviceCheck = async () => {
 
 // ── Phase 2: Form submit ──────────────────────────────────────────────────────
 document.getElementById('btn-login').addEventListener('click', async () => {
-  const name       = document.getElementById('inp-name').value.trim();
-  const email      = document.getElementById('inp-email').value.trim();
+  const name = document.getElementById('inp-name').value.trim();
+  const email = document.getElementById('inp-email').value.trim();
   const rollNumber = document.getElementById('inp-roll').value.trim();
 
   if (!name || !email || !rollNumber) {
