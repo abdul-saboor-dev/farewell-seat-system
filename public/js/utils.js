@@ -35,13 +35,13 @@ const api = async (method, path, body = null, token = null) => {
 };
 
 // ── Auth Helpers ──────────────────────────────────────────────────────────────
-const getToken   = () => localStorage.getItem('fss_token');
+const getToken = () => localStorage.getItem('fss_token');
 const getStudent = () => JSON.parse(localStorage.getItem('fss_student') || 'null');
-const setAuth    = (token, student) => {
+const setAuth = (token, student) => {
   localStorage.setItem('fss_token', token);
   localStorage.setItem('fss_student', JSON.stringify(student));
 };
-const clearAuth  = () => {
+const clearAuth = () => {
   localStorage.removeItem('fss_token');
   localStorage.removeItem('fss_student');
 };
