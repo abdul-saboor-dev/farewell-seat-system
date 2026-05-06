@@ -11,7 +11,7 @@ const showStep = (step) => {
 
 const setLoading = (btnTextId, spinnerId, loading) => {
   document.getElementById(btnTextId).style.display = loading ? 'none' : 'inline';
-  document.getElementById(spinnerId).style.display  = loading ? 'inline-block' : 'none';
+  document.getElementById(spinnerId).style.display = loading ? 'inline-block' : 'none';
 };
 
 // ── OTP Digit Navigation ──────────────────────────────────────────────────────
@@ -59,8 +59,8 @@ const startTimer = (seconds = 300) => {
 
 // ── Step 1: Send OTP ──────────────────────────────────────────────────────────
 document.getElementById('btn-send-otp').addEventListener('click', async () => {
-  const name       = document.getElementById('inp-name').value.trim();
-  const email      = document.getElementById('inp-email').value.trim();
+  const name = document.getElementById('inp-name').value.trim();
+  const email = document.getElementById('inp-email').value.trim();
   const rollNumber = document.getElementById('inp-roll').value.trim();
 
   if (!name || !email || !rollNumber) {

@@ -38,7 +38,7 @@ const app = express();
 
 // ─── CORS (FINAL FIX FOR RAILWAY + VERCEL) ───────────────────────────────────
 app.use(cors({
-  origin: 'https://farewell-seat-system.vercel.app',
+  origin: 'https://farewell-seat-system-production.up.railway.app',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Password'],
   credentials: true,
@@ -46,7 +46,7 @@ app.use(cors({
 
 // 🔥 IMPORTANT: manual preflight handler (fixes Railway CORS issue)
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "https://farewell-seat-system.vercel.app");
+  res.header("Access-Control-Allow-Origin", "https://farewell-seat-system-production.up.railway.app");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Admin-Password");
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
 

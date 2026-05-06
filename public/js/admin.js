@@ -7,7 +7,7 @@ document.getElementById('btn-admin-login').addEventListener('click', async () =>
   const pwd = document.getElementById('admin-pwd-input').value.trim();
   if (!pwd) { showToast('Enter the admin password', 'error'); return; }
 
-  document.getElementById('admin-login-text').style.display    = 'none';
+  document.getElementById('admin-login-text').style.display = 'none';
   document.getElementById('admin-login-spinner').style.display = 'inline-block';
 
   try {
@@ -20,7 +20,7 @@ document.getElementById('btn-admin-login').addEventListener('click', async () =>
   } catch (err) {
     showToast(err.message || 'Invalid password', 'error');
   } finally {
-    document.getElementById('admin-login-text').style.display    = 'inline';
+    document.getElementById('admin-login-text').style.display = 'inline';
     document.getElementById('admin-login-spinner').style.display = 'none';
   }
 });
@@ -33,7 +33,7 @@ document.getElementById('admin-pwd-input').addEventListener('keydown', (e) => {
 // ── Admin API Helper ──────────────────────────────────────────────────────────
 const apiAdmin = async (method, path, body = null, pwd = null) => {
   const password = pwd || adminPassword;
-  const headers  = { 'Content-Type': 'application/json', 'X-Admin-Password': password };
+  const headers = { 'Content-Type': 'application/json', 'X-Admin-Password': password };
   const res = await fetch(`${API_BASE}/api${path}`, {
     method, headers,
     body: body ? JSON.stringify(body) : null,
@@ -53,7 +53,7 @@ const loadDashboard = async () => {
     ]);
 
     document.getElementById('admin-stat-students').textContent = studentsData.totalStudents;
-    document.getElementById('admin-stat-booked').textContent   = bookingsData.totalBookings;
+    document.getElementById('admin-stat-booked').textContent = bookingsData.totalBookings;
     document.getElementById('admin-stat-available').textContent = seatsData.summary?.available ?? '—';
 
     renderBookings(bookingsData.bookings);
@@ -144,9 +144,9 @@ document.getElementById('btn-reset-cancel').addEventListener('click', () => {
   document.getElementById('reset-modal').classList.remove('open');
 });
 document.getElementById('btn-reset-confirm').addEventListener('click', async () => {
-  document.getElementById('reset-text').style.display    = 'none';
+  document.getElementById('reset-text').style.display = 'none';
   document.getElementById('reset-spinner').style.display = 'inline-block';
-  document.getElementById('btn-reset-confirm').disabled  = true;
+  document.getElementById('btn-reset-confirm').disabled = true;
   try {
     const data = await apiAdmin('DELETE', '/admin/reset');
     document.getElementById('reset-modal').classList.remove('open');
@@ -155,9 +155,9 @@ document.getElementById('btn-reset-confirm').addEventListener('click', async () 
   } catch (err) {
     showToast(err.message, 'error');
   } finally {
-    document.getElementById('reset-text').style.display    = 'inline';
+    document.getElementById('reset-text').style.display = 'inline';
     document.getElementById('reset-spinner').style.display = 'none';
-    document.getElementById('btn-reset-confirm').disabled  = false;
+    document.getElementById('btn-reset-confirm').disabled = false;
   }
 });
 
@@ -166,10 +166,10 @@ const switchTab = (tab) => {
   document.getElementById('panel-bookings').style.display = tab === 'bookings' ? 'block' : 'none';
   document.getElementById('panel-students').style.display = tab === 'students' ? 'block' : 'none';
   document.getElementById('tab-bookings').className = `btn btn-sm ${tab === 'bookings' ? 'btn-primary' : 'btn-ghost'}`;
-  document.getElementById('tab-students').className  = `btn btn-sm ${tab === 'students'  ? 'btn-primary' : 'btn-ghost'}`;
+  document.getElementById('tab-students').className = `btn btn-sm ${tab === 'students' ? 'btn-primary' : 'btn-ghost'}`;
 };
 
 // ── Expose functions called from inline onclick attributes in HTML ─────────────
-window.switchTab     = switchTab;
+window.switchTab = switchTab;
 window.cancelBooking = cancelBooking;
 window.deleteStudent = deleteStudent;

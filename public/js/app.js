@@ -9,13 +9,13 @@ const init = async () => {
 const renderNavAuth = () => {
   const student = getStudent();
   const navAuth = document.getElementById('nav-auth');
-  const banner  = document.getElementById('user-banner');
+  const banner = document.getElementById('user-banner');
   if (student) {
     navAuth.innerHTML = `<span style="font-size:0.82rem;color:var(--text-2)">👋 ${student.name.split(' ')[0]}</span>`;
     banner.style.display = 'flex';
     document.getElementById('user-avatar').textContent = student.name.charAt(0).toUpperCase();
-    document.getElementById('user-name').textContent   = student.name;
-    document.getElementById('user-roll').textContent   = student.rollNumber;
+    document.getElementById('user-name').textContent = student.name;
+    document.getElementById('user-roll').textContent = student.rollNumber;
   } else {
     navAuth.innerHTML = `<a href="/login.html" class="btn btn-primary btn-sm">Login to Book</a>`;
     banner.style.display = 'none';
@@ -25,12 +25,12 @@ const renderNavAuth = () => {
 const loadSeats = async () => {
   try {
     const data = await api('GET', '/seats');
-    const all  = [...data.leftSeats, ...data.rightSeats];
+    const all = [...data.leftSeats, ...data.rightSeats];
 
     document.getElementById('stat-available').textContent = data.summary.available;
-    document.getElementById('stat-booked').textContent    = data.summary.booked;
+    document.getElementById('stat-booked').textContent = data.summary.booked;
 
-    renderCol('left-col',  data.leftSeats,  all);
+    renderCol('left-col', data.leftSeats, all);
     renderCol('right-col', data.rightSeats, all);
 
     // Update seat badge
@@ -39,7 +39,7 @@ const loadSeats = async () => {
       const mine = all.find(s =>
         s.bookedBy &&
         (s.bookedBy._id?.toString() === student.id?.toString() ||
-         s.bookedBy._id?.toString() === student._id?.toString())
+          s.bookedBy._id?.toString() === student._id?.toString())
       );
       if (mine) {
         document.getElementById('user-seat-badge').style.display = 'inline-flex';
@@ -52,15 +52,15 @@ const loadSeats = async () => {
 };
 
 const renderCol = (colId, seats, allSeats) => {
-  const col     = document.getElementById(colId);
+  const col = document.getElementById(colId);
   const student = getStudent();
   col.innerHTML = '';
 
   seats.forEach(seat => {
     const isMine = student && seat.bookedBy &&
       (seat.bookedBy._id?.toString() === student.id?.toString() ||
-       seat.bookedBy._id?.toString() === student._id?.toString());
-    const isBooked   = seat.isBooked;
+        seat.bookedBy._id?.toString() === student._id?.toString());
+    const isBooked = seat.isBooked;
     const stateClass = isMine ? 'mine' : isBooked ? 'booked' : 'available';
 
     const btn = document.createElement('button');
@@ -126,7 +126,7 @@ document.getElementById('btn-modal-confirm').addEventListener('click', async () 
   const bm = document.getElementById('btn-modal-confirm');
   ct.style.display = 'none'; sp.style.display = 'inline-block'; bm.disabled = true;
   try {
-    const data    = await api('POST', '/seats/book', { seatNumber: selectedSeatNumber }, getToken());
+    const data = await api('POST', '/seats/book', { seatNumber: selectedSeatNumber }, getToken());
     const student = getStudent();
     if (student) { student.bookedSeat = data.seat; localStorage.setItem('fss_student', JSON.stringify(student)); }
     document.getElementById('confirm-modal').classList.remove('open');
