@@ -1,3 +1,9 @@
+// ── Crypto Polyfill (required by mongoose/mongodb driver on Node < 17) ─────────
+// globalThis.crypto is the Web Crypto API; ensure it's defined before anything else
+if (!globalThis.crypto) {
+  globalThis.crypto = require('crypto').webcrypto;
+}
+
 const express = require('express');
 const cors    = require('cors');
 const dotenv  = require('dotenv');
