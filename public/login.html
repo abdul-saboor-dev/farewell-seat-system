@@ -15,52 +15,36 @@
 
     <div class="auth-logo">🎓</div>
     <h1 class="auth-title">Welcome Back</h1>
-    <p class="auth-subtitle">Enter your student details to receive your login OTP</p>
+    <p class="auth-subtitle">Enter your student details to access the seat reservation</p>
 
-    <!-- Step 1: Student Details -->
+    <!-- Single-Step Login Form -->
     <div class="auth-step active" id="step-register">
+
       <div class="form-group">
         <label class="form-label" for="inp-name">Full Name</label>
         <input class="form-input" id="inp-name" type="text" placeholder="e.g. Ali Khan" autocomplete="name" />
       </div>
+
       <div class="form-group">
         <label class="form-label" for="inp-email">Student Email</label>
         <input class="form-input" id="inp-email" type="email" placeholder="ali@university.edu" autocomplete="email" />
       </div>
+
       <div class="form-group">
         <label class="form-label" for="inp-roll">Roll Number</label>
         <input class="form-input" id="inp-roll" type="text" placeholder="e.g. CS-2021-001" autocomplete="off" />
       </div>
-      <button class="btn btn-primary btn-full" id="btn-send-otp">
-        <span id="send-otp-text">Send OTP →</span>
-        <span id="send-otp-spinner" class="spinner" style="display:none"></span>
-      </button>
-      <p class="auth-footer">A 6-digit OTP will be sent to your email address.</p>
-    </div>
 
-    <!-- Step 2: OTP Verification -->
-    <div class="auth-step" id="step-otp">
-      <p style="text-align:center;color:var(--text-2);font-size:0.85rem;margin-bottom:18px;">
-        Code sent to <strong id="otp-email-display" style="color:#c7d2fe"></strong>
-      </p>
-      <div class="otp-inputs" id="otp-inputs">
-        <input class="otp-digit" id="otp-0" type="text" inputmode="numeric" maxlength="1" />
-        <input class="otp-digit" id="otp-1" type="text" inputmode="numeric" maxlength="1" />
-        <input class="otp-digit" id="otp-2" type="text" inputmode="numeric" maxlength="1" />
-        <input class="otp-digit" id="otp-3" type="text" inputmode="numeric" maxlength="1" />
-        <input class="otp-digit" id="otp-4" type="text" inputmode="numeric" maxlength="1" />
-        <input class="otp-digit" id="otp-5" type="text" inputmode="numeric" maxlength="1" />
-      </div>
-      <div class="otp-timer">Expires in <span id="timer-count">5:00</span></div>
-      <button class="btn btn-primary btn-full" id="btn-verify-otp" style="margin-top:18px">
-        <span id="verify-otp-text">Verify & Login</span>
-        <span id="verify-otp-spinner" class="spinner" style="display:none"></span>
+      <button class="btn btn-primary btn-full" id="btn-login">
+        <span id="login-btn-text">Login →</span>
+        <span id="login-spinner" class="spinner" style="display:none"></span>
       </button>
-      <div class="divider">or</div>
-      <button class="btn btn-ghost btn-full" id="btn-resend-otp">Resend OTP</button>
-      <p class="auth-footer" style="margin-top:14px">
-        <a href="#" class="auth-link" id="btn-back-to-register">← Change Details</a>
+
+      <p class="auth-footer">
+        This device will be permanently linked to your account.<br />
+        <strong>One account — one device only.</strong>
       </p>
+
     </div>
 
   </div>

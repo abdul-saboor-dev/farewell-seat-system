@@ -24,6 +24,13 @@ const studentSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
     },
+    // ── Device-Based Auth ────────────────────────────────────────────────────
+    // Stored on first successful login. All subsequent logins must match.
+    deviceId: {
+      type: String,
+      default: null,
+      trim: true,
+    },
     isVerified: {
       type: Boolean,
       default: false,

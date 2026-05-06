@@ -25,8 +25,34 @@ const showToast = (message, type = 'info', duration = 3500) => {
   }, duration);
 };
 
-// ── API Base URL (FIXED + SAFE) ───────────────────────────────────────────────
+// ── Device ID (One Account = One Device) ────────────────────────────────────
+/**
+ * Returns a stable, unique device ID for this browser.
+ * Generated once, persisted in localStorage forever.
+ * Used to bind a student account to a single device.
+ */
+const getDeviceId = () => {
+  const KEY = 'fss_device_id';
+  let id = localStorage.getItem(KEY);
 
+  if (!id) {
+    // Generate a fingerprint: random UUID-style string + browser entropy
+    const buf = new Uint8Array(16);
+    crypto.getRandomValues(buf);
+    id = [...buf]
+      .map((b, i) =>
+        [4, 6, 8, 10].includes(i)
+          ? '-' + b.toString(16).padStart(2, '0')
+          : b.toString(16).padStart(2, '0')
+      )
+      .join('');
+    localStorage.setItem(KEY, id);
+  }
+
+  return id;
+};
+
+// ── API Base URL (FIXED + SAFE) ───────────────────────────────────────────────
 // 🔥 IMPORTANT: ONLY correct Railway backend
 const RAILWAY_URL = 'https://farewell-seat-system-production.up.railway.app';
 
@@ -38,11 +64,13 @@ const isLocal =
 // Final base URL
 const API_BASE = isLocal ? '' : RAILWAY_URL;
 
-// ── API Helper (FIXED STRUCTURE) ─────────────────────────────────────────────
+// ── API Helper ────────────────────────────────────────────────────────────────
+// X-Device-ID is automatically attached to EVERY request.
 const api = async (method, path, body = null, token = null) => {
   try {
     const headers = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-Device-ID': getDeviceId(),  // ← device fingerprint on every call
     };
 
     if (token) {
@@ -95,6 +123,8 @@ const setAuth = (token, student) => {
 const clearAuth = () => {
   localStorage.removeItem('fss_token');
   localStorage.removeItem('fss_student');
+  // NOTE: fss_device_id is intentionally NOT cleared —
+  // the device binding must survive logout.
 };
 
 const isLoggedIn = () => !!getToken();

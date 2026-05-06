@@ -40,14 +40,14 @@ const app = express();
 app.use(cors({
   origin: 'https://farewell-seat-system-production.up.railway.app',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Password'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Password', 'X-Device-ID'],
   credentials: true,
 }));
 
 // 🔥 IMPORTANT: manual preflight handler (fixes Railway CORS issue)
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "https://farewell-seat-system-production.up.railway.app");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Admin-Password");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Admin-Password, X-Device-ID");
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
 
   if (req.method === "OPTIONS") {

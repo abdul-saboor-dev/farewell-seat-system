@@ -1,19 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { register, verifyOTP, resendOTP, getMe } = require('../controllers/authController');
+const { register, login, getMe } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
 // @route  POST /api/auth/register
-// @desc   Register student & send OTP email
+// @desc   Register student account (no OTP)
 router.post('/register', register);
 
-// @route  POST /api/auth/verify-otp
-// @desc   Verify OTP and return JWT token
-router.post('/verify-otp', verifyOTP);
-
-// @route  POST /api/auth/resend-otp
-// @desc   Resend OTP to student email
-router.post('/resend-otp', resendOTP);
+// @route  POST /api/auth/login
+// @desc   Login with device ID binding — returns JWT directly
+router.post('/login', login);
 
 // @route  GET /api/auth/me
 // @desc   Get logged-in student profile (protected)

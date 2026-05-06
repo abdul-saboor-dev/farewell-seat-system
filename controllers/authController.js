@@ -1,9 +1,5 @@
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Student = require('../models/Student');
-const OTP = require('../models/OTP');
-const generateOTP = require('../utils/generateOTP');
-const sendEmail = require('../utils/sendEmail');
 
 // ─── Helper: Generate JWT Token ───────────────────────────────────────────────
 const generateToken = (studentId) => {
@@ -12,22 +8,11 @@ const generateToken = (studentId) => {
   });
 };
 
-// ─── Helper: Build OTP Email HTML ─────────────────────────────────────────────
-const buildOTPEmailHTML = (name, otp) => `
-  <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; padding: 32px; border-radius: 12px; background: #0f0f1a; color: #e0e0e0;">
-    <h2 style="color: #a78bfa; margin-bottom: 8px;">🎓 Farewell Seat Reservation</h2>
-    <p style="margin-bottom: 24px;">Hi <strong>${name}</strong>, here is your One-Time Password:</p>
-    <div style="background: #1e1b4b; border-radius: 8px; padding: 20px; text-align: center; letter-spacing: 12px; font-size: 36px; font-weight: bold; color: #a78bfa;">
-      ${otp}
-    </div>
-    <p style="margin-top: 24px; color: #9ca3af; font-size: 13px;">This OTP expires in <strong>5 minutes</strong>. Do not share it with anyone.</p>
-    <hr style="border-color: #2d2b5a; margin: 24px 0;" />
-    <p style="font-size: 12px; color: #6b7280;">If you did not request this, please ignore this email.</p>
-  </div>
-`;
-
 // ─────────────────────────────────────────────────────────────────────────────
 // REGISTER
+// Creates the student account on first visit (no OTP, no email).
+// If student already exists, behaves like a login pre-check.
+// Device is NOT bound yet at this stage — binding happens on /login.
 // ─────────────────────────────────────────────────────────────────────────────
 const register = async (req, res, next) => {
   try {
@@ -39,6 +24,7 @@ const register = async (req, res, next) => {
       return next(err);
     }
 
+    // Prevent roll number hijacking across different emails
     const existingRoll = await Student.findOne({
       rollNumber: rollNumber.toUpperCase(),
       email: { $ne: email.toLowerCase() },
@@ -56,29 +42,9 @@ const register = async (req, res, next) => {
       student = await Student.create({ name, email, rollNumber });
     }
 
-    const rawOTP = generateOTP();
-    const hashedOTP = await bcrypt.hash(rawOTP, 10);
-
-    await OTP.deleteMany({ email: email.toLowerCase() });
-
-    await OTP.create({
-      email: email.toLowerCase(),
-      otp: hashedOTP,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-    });
-
-    // ✅ FIXED: NON-BLOCKING EMAIL (IMPORTANT)
-    sendEmail({
-      to: email,
-      subject: '🎓 Your Farewell Seat OTP Code',
-      html: buildOTPEmailHTML(student.name, rawOTP),
-    }).catch(err => {
-      console.log('⚠️ Email failed but OTP still valid:', err.message);
-    });
-
     return res.status(200).json({
       success: true,
-      message: `OTP sent to ${email}. It expires in 5 minutes.`,
+      message: 'Account verified. Proceeding to login...',
     });
 
   } catch (error) {
@@ -87,50 +53,61 @@ const register = async (req, res, next) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VERIFY OTP
+// LOGIN
+// Validates student details + device ID. Binds device on first login.
+// Blocks login if a different device is already bound to this account.
+// Returns JWT directly — no OTP step.
 // ─────────────────────────────────────────────────────────────────────────────
-const verifyOTP = async (req, res, next) => {
+const login = async (req, res, next) => {
   try {
-    const { email, otp } = req.body;
+    const { name, email, rollNumber } = req.body;
 
-    if (!email || !otp) {
-      const err = new Error('Email and OTP are required');
+    // Device ID is sent as a custom header (X-Device-ID)
+    const deviceId = req.headers['x-device-id'];
+
+    if (!name || !email || !rollNumber) {
+      const err = new Error('Name, email, and roll number are required');
       err.statusCode = 400;
       return next(err);
     }
 
-    const otpRecord = await OTP.findOne({
+    if (!deviceId || deviceId.trim() === '') {
+      const err = new Error('Device ID is required. Please clear your browser cache and try again.');
+      err.statusCode = 400;
+      return next(err);
+    }
+
+    // Find student by email AND roll number combination
+    const student = await Student.findOne({
       email: email.toLowerCase(),
-      expiresAt: { $gt: new Date() },
+      rollNumber: rollNumber.toUpperCase(),
     });
 
-    if (!otpRecord) {
-      const err = new Error('OTP has expired or does not exist. Please request a new one.');
-      err.statusCode = 400;
-      return next(err);
-    }
-
-    const isMatch = await bcrypt.compare(otp.toString(), otpRecord.otp);
-
-    if (!isMatch) {
-      const err = new Error('Invalid OTP. Please try again.');
-      err.statusCode = 401;
-      return next(err);
-    }
-
-    const student = await Student.findOneAndUpdate(
-      { email: email.toLowerCase() },
-      { isVerified: true },
-      { returnDocument: 'after' }
-    );
-
     if (!student) {
-      const err = new Error('Student not found. Please register first.');
+      const err = new Error('No account found with these details. Please check your information.');
       err.statusCode = 404;
       return next(err);
     }
 
-    await OTP.deleteMany({ email: email.toLowerCase() });
+    // ── Device Binding Logic ─────────────────────────────────────────────────
+    if (!student.deviceId) {
+      // First login — bind this device to the account permanently
+      student.deviceId = deviceId.trim();
+      student.isVerified = true;
+      await student.save();
+      console.log(`✅ Device bound for student: ${student.email} → ${deviceId}`);
+
+    } else if (student.deviceId !== deviceId.trim()) {
+      // Different device detected — block login
+      const err = new Error(
+        'This account is already logged in on another device. ' +
+        'One account is allowed on one device only. ' +
+        'Contact admin if you need to reset your device.'
+      );
+      err.statusCode = 403;
+      return next(err);
+    }
+    // else: same device — allow login normally
 
     const token = generateToken(student._id);
 
@@ -146,57 +123,6 @@ const verifyOTP = async (req, res, next) => {
         isVerified: student.isVerified,
         bookedSeat: student.bookedSeat,
       },
-    });
-
-  } catch (error) {
-    next(error);
-  }
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RESEND OTP
-// ─────────────────────────────────────────────────────────────────────────────
-const resendOTP = async (req, res, next) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      const err = new Error('Email is required');
-      err.statusCode = 400;
-      return next(err);
-    }
-
-    const student = await Student.findOne({ email: email.toLowerCase() });
-
-    if (!student) {
-      const err = new Error('No student found with this email. Please register first.');
-      err.statusCode = 404;
-      return next(err);
-    }
-
-    const rawOTP = generateOTP();
-    const hashedOTP = await bcrypt.hash(rawOTP, 10);
-
-    await OTP.deleteMany({ email: email.toLowerCase() });
-
-    await OTP.create({
-      email: email.toLowerCase(),
-      otp: hashedOTP,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-    });
-
-    // ✅ FIXED: NON-BLOCKING EMAIL
-    sendEmail({
-      to: email,
-      subject: '🎓 Your New Farewell Seat OTP Code',
-      html: buildOTPEmailHTML(student.name, rawOTP),
-    }).catch(err => {
-      console.log('⚠️ Resend email failed but OTP still valid:', err.message);
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: `New OTP sent to ${email}. It expires in 5 minutes.`,
     });
 
   } catch (error) {
@@ -227,4 +153,4 @@ const getMe = async (req, res, next) => {
   }
 };
 
-module.exports = { register, verifyOTP, resendOTP, getMe };
+module.exports = { register, login, getMe };
