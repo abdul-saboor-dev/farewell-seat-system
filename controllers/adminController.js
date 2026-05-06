@@ -148,4 +148,43 @@ const deleteStudent = async (req, res, next) => {
   }
 };
 
-module.exports = { getAllBookings, cancelBooking, resetAllSeats, getAllStudents, deleteStudent };
+// ─────────────────────────────────────────────────────────────────────────────
+// @desc    Seed the database with 38 seats (19 left + 19 right)
+// @route   POST /api/admin/seed
+// @access  Admin
+// ─────────────────────────────────────────────────────────────────────────────
+const seedSeats = async (req, res, next) => {
+  try {
+    console.log('🌱 [Seed] Starting seat seed operation...');
+
+    // Clear all existing seats
+    await Seat.deleteMany({});
+    console.log('🗑️  [Seed] Cleared existing seats');
+
+    const seats = [];
+
+    // Left side: seats 1–19
+    for (let i = 1; i <= 19; i++) {
+      seats.push({ seatNumber: i, side: 'left' });
+    }
+
+    // Right side: seats 20–38
+    for (let i = 20; i <= 38; i++) {
+      seats.push({ seatNumber: i, side: 'right' });
+    }
+
+    await Seat.insertMany(seats);
+    console.log(`✅ [Seed] Successfully seeded ${seats.length} seats (19 left + 19 right)`);
+
+    res.status(200).json({
+      success: true,
+      message: `Seeded ${seats.length} seats`,
+      count: seats.length,
+    });
+  } catch (error) {
+    console.error('❌ [Seed] Seeding failed:', error.message);
+    next(error);
+  }
+};
+
+module.exports = { getAllBookings, cancelBooking, resetAllSeats, getAllStudents, deleteStudent, seedSeats };

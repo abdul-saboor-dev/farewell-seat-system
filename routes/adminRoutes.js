@@ -6,6 +6,7 @@ const {
   resetAllSeats,
   getAllStudents,
   deleteStudent,
+  seedSeats,
 } = require('../controllers/adminController');
 const { adminProtect } = require('../middleware/adminMiddleware');
 
@@ -31,5 +32,9 @@ router.delete('/reset', resetAllSeats);
 // @route  DELETE /api/admin/student/:studentId
 // @desc   Completely delete a student (wipes registration + frees seat + deletes OTPs)
 router.delete('/student/:studentId', deleteStudent);
+
+// @route  POST   /api/admin/seed
+// @desc   Seed the database with 38 seats (19 left + 19 right). Run once to initialise.
+router.post('/seed', seedSeats);
 
 module.exports = router;
