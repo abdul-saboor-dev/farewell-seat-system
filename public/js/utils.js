@@ -12,11 +12,17 @@ const showToast = (message, type = 'info', duration = 3500) => {
   }, duration);
 };
 
+// ── API Base URL ──────────────────────────────────────────────────────────────
+// Auto-detects: empty string on localhost (relative), full URL on production
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? ''
+  : 'https://farewell-seat-system.up.railway.app';
+
 // ── API Helper ────────────────────────────────────────────────────────────────
 const api = async (method, path, body = null, token = null) => {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${API_BASE}/api${path}`, {
     method,
     headers,
     body: body ? JSON.stringify(body) : null,

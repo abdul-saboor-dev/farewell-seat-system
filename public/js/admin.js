@@ -34,7 +34,7 @@ document.getElementById('admin-pwd-input').addEventListener('keydown', (e) => {
 const apiAdmin = async (method, path, body = null, pwd = null) => {
   const password = pwd || adminPassword;
   const headers  = { 'Content-Type': 'application/json', 'X-Admin-Password': password };
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${API_BASE}/api${path}`, {
     method, headers,
     body: body ? JSON.stringify(body) : null,
   });
@@ -49,7 +49,7 @@ const loadDashboard = async () => {
     const [bookingsData, studentsData, seatsData] = await Promise.all([
       apiAdmin('GET', '/admin/bookings'),
       apiAdmin('GET', '/admin/students'),
-      fetch('/api/seats').then(r => r.json()),
+      fetch(`${API_BASE}/api/seats`).then(r => r.json()),
     ]);
 
     document.getElementById('admin-stat-students').textContent = studentsData.totalStudents;
