@@ -38,23 +38,18 @@ connectDB().then(runSeedOnce);
 // ─── Initialize Express App ───────────────────────────────────────────────────
 const app = express();
 
-// ─── CORS — Allow Vercel frontend to call Railway backend ────────────────────
-// Note: credentials:true is incompatible with origin:'*'.
-// We use JWT in Authorization headers (not cookies), so credentials not needed.
-app.use(cors({
-  origin: '*',
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+const corsOptions = {
+  origin: 'https://farewell-seat-system.vercel.app',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Admin-Password',
-  ],
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Password'],
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-
 
 // ─── Health Check Route ───────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
